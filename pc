@@ -13,7 +13,7 @@ class node:
         self.raw = expression
         self.arg1 = None
         self.arg2 = None
-        if expression.isdigit():
+        if expression.replace('#','').replace('&','').isdigit():
             self.op = expression
         else:
             for i in range(0,len(expression)):
@@ -149,7 +149,7 @@ class node:
             return True
 
     def evaluate(self):
-        return eval(self.raw.replace("^","**"))
+        return eval(self.raw.replace("^","**").replace("#",'').replace('&',''))
 
     # 2D edition(testing with ^)
     def reformat(self):
@@ -160,9 +160,9 @@ class node:
         #---------------------------------------------------------------
         # PADDING auxilliary function
         #---------------------------------------------------------------
-        formatters = ['%','/']
+        formatters = ['%','/','#','&']
         def filtered(line=''):
-            return line.replace('%','').replace('/','')
+            return line.replace('%','').replace('/','').replace('#','').replace('&','')
 
         def pad(block1):
             largest = max([len(filtered(i)) for i in block1])
@@ -270,7 +270,7 @@ class node:
         ################################################################
         # METHOD EXECUTION
         ################################################################
-        if self.op.isdigit():
+        if False:
             return 0,[self.op]
         elif self.op in ['+','-','*']:
             # perform concatenation
@@ -291,7 +291,7 @@ class node:
             #block[mainline] = '('+block[mainline]+')'
             return paren(mainline,block)
         else:
-            return
+            return 0,[self.op]
 
 def output(expression=''):
     syntax_tree = node(expression)
@@ -304,8 +304,10 @@ def output(expression=''):
         print(cur_line)
     return
 
-def convert(expression=''):
+def convert(expression='',pos=0):
     try:
+        expression = expression[:pos-1]+'#'+expression[pos-1:pos]+'&'+expression[pos:]
+        #expression = expression[:pos]+'99'+expression[pos:pos+1]+'99'+expression[pos+1:]
         syntax_tree = node(expression)
         solution = str(syntax_tree.evaluate())
         mainline,lst = syntax_tree.reformat()
@@ -369,17 +371,13 @@ def main(stdscr):
         elif cur_char == curses.KEY_LEFT:
             if position > 0:
                 position += -1
-            continue
         elif cur_char == curses.KEY_RIGHT:
             if position < len(line_lst):
                 position += 1
-            continue
         elif cur_char == curses.KEY_HOME:
             position = 0
-            continue
         elif cur_char == curses.KEY_END:
             position = len(line_lst)
-            continue
         #---------------------------------------------------------------
         # INSERTION
         #---------------------------------------------------------------
@@ -394,12 +392,16 @@ def main(stdscr):
         stdscr.move(0,0)
         stdscr.addstr("".join(line_lst))
         stdscr.move(1,0)
-        for cur_line in convert("".join(line_lst)):
+        for cur_line in convert("".join(line_lst),position):
             for cur_char in cur_line:
                 if cur_char == '%':
                     stdscr.attron(curses.A_UNDERLINE)
                 elif cur_char == '/':
                     stdscr.attroff(curses.A_UNDERLINE)
+                elif cur_char == '#':
+                    stdscr.attron(curses.A_BOLD)
+                elif cur_char == '&':
+                    stdscr.attroff(curses.A_BOLD)
                 else:
                     stdscr.addch(cur_char)
             stdscr.addch('\n')
