@@ -348,7 +348,8 @@ def main(stdscr):
     line_lst = []
 
     while True:
-        stdscr.move(0,position)
+        height,width=stdscr.getmaxyx()
+        stdscr.move(int(position/width),position%width)
         cur_char = stdscr.getch()
         
         ################################################################
@@ -391,7 +392,7 @@ def main(stdscr):
         stdscr.clear()
         stdscr.move(0,0)
         stdscr.addstr("".join(line_lst))
-        stdscr.move(1,0)
+        stdscr.move(int(len("".join(line_lst))/width)+1,0)
         for cur_line in convert("".join(line_lst),position):
             for cur_char in cur_line:
                 if cur_char == '%':
