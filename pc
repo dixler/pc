@@ -13,7 +13,7 @@ class node:
         self.raw = expression
         self.arg1 = None
         self.arg2 = None
-        if expression.replace('#','').replace('&','').isdigit():
+        if expression.replace('#','').replace('&','').replace('.','').isdigit():
             self.op = expression
         else:
             for i in range(0,len(expression)):
