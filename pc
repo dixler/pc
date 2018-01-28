@@ -319,7 +319,8 @@ def output(expression=''):
 
 def convert(expression='',pos=0):
     try:
-        expression = expression[:pos-1]+'#'+expression[pos-1:]
+        if(pos > 0):
+            expression = expression[:pos-1]+'#'+expression[pos-1:]
         syntax_tree = node(expression)
         solution = str(syntax_tree.evaluate())
         mainline,lst = syntax_tree.reformat()
@@ -387,6 +388,10 @@ def main(stdscr):
         elif cur_char == curses.KEY_RIGHT:
             if position < len(line_lst):
                 position += 1
+        elif cur_char == curses.KEY_UP:
+            continue
+        elif cur_char == curses.KEY_DOWN:
+            continue
         elif cur_char == curses.KEY_HOME:
             position = 0
         elif cur_char == curses.KEY_END:
@@ -425,5 +430,3 @@ def main(stdscr):
     return
 
 wrapper(main)
-#output("1+1+(2.1*1)")
-#output("1+1+(2*1)")
