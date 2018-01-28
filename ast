@@ -1,0 +1,392 @@
+#!/bin/python3.6
+'''
+Author: Kyle Dixler
+Finally discovered compiler design and the idea of abstract syntax trees
+let's see where this goes.
+'''
+
+underline = '`'
+normal = '~'
+
+class node:
+    def __init__(self, expression=''):
+        self.raw = expression
+        self.arg1 = None
+        self.arg2 = None
+        if expression.isdigit():
+            self.op = expression
+        else:
+            for i in range(0,len(expression)):
+                if \
+                self.term_split(expression) \
+                or self.multi_split(expression) \
+                or self.div_split(expression) \
+                or self.expo_split(expression) \
+                or self.paren_split(expression):
+                    # use shortcircuit evaluation to
+                    # enforce precedence rules
+                    break
+                
+    def paren_split(self, expression=''):
+        if expression[0] == '(' \
+           and expression[-1] == ')':
+            self.op = '('
+            self.arg1 = node(expression[1:-1])
+            return True
+            
+        return False
+
+    def expo_split(self, expression=''):
+        level = 0
+        arg1 = ''
+        arg2 = ''
+        parseFirst = True
+        for i in expression:
+            # level determination
+            if i == '(':
+                level += 1
+            elif i == ')':
+                level -= 1
+            # if 0-level operate
+            if level == 0 and parseFirst:
+                if i == '^':
+                    # we need to split the term
+                    self.op = i
+                    parseFirst = False
+                    continue
+            if parseFirst:
+                arg1 += i
+            else:
+                arg2 += i
+        if parseFirst == False:
+            # indicates that an addition was found
+            self.arg1 = node(arg1)
+            self.arg2 = node(arg2)
+            return True
+
+    def multi_split(self, expression=''):
+        level = 0
+        arg1 = ''
+        arg2 = ''
+        parseFirst = True
+        for i in expression:
+            # level determination
+            if i == '(':
+                level += 1
+            elif i == ')':
+                level -= 1
+            # if 0-level operate
+            if level == 0 and parseFirst:
+                if i == '*':
+                    # we need to split the term
+                    self.op = i
+                    parseFirst = False
+                    continue
+            if parseFirst:
+                arg1 += i
+            else:
+                arg2 += i
+        if parseFirst == False:
+            # indicates that an addition was found
+            self.arg1 = node(arg1)
+            self.arg2 = node(arg2)
+            return True
+
+    def div_split(self, expression=''):
+        level = 0
+        arg1 = ''
+        arg2 = ''
+        parseFirst = True
+        for i in expression:
+            # level determination
+            if i == '(':
+                level += 1
+            elif i == ')':
+                level -= 1
+            # if 0-level operate
+            if level == 0 and parseFirst:
+                if i == '/':
+                    # we need to split the term
+                    self.op = i
+                    parseFirst = False
+                    continue
+            if parseFirst:
+                arg1 += i
+            else:
+                arg2 += i
+        if parseFirst == False:
+            # indicates that an addition was found
+            self.arg1 = node(arg1)
+            self.arg2 = node(arg2)
+            return True
+
+    def term_split(self, expression=''):
+        level = 0
+        arg1 = ''
+        arg2 = ''
+        parseFirst = True
+        for i in expression:
+            # level determination
+            if i == '(':
+                level += 1
+            elif i == ')':
+                level -= 1
+            # if 0-level operate
+            if level == 0 and parseFirst:
+                if i == '+' or i == '-':
+                    # we need to split the term
+                    self.op = i
+                    parseFirst = False
+                    continue
+            if parseFirst:
+                arg1 += i
+            else:
+                arg2 += i
+        if parseFirst == False:
+            # indicates that an addition was found
+            self.arg1 = node(arg1)
+            self.arg2 = node(arg2)
+            return True
+
+    def evaluate(self):
+        return eval(self.raw.replace("^","**"))
+
+    # 2D edition(testing with ^)
+    def reformat(self):
+        ################################################################
+        # FUNCTION DECLARATIONS
+        ################################################################
+
+        #---------------------------------------------------------------
+        # PADDING auxilliary function
+        #---------------------------------------------------------------
+        formatters = ['%','/']
+        def filtered(line=''):
+            return line.replace('%','').replace('/','')
+
+        def pad(block1):
+            largest = max([len(filtered(i)) for i in block1])
+            newBlock = []
+            for i in block1:
+                newBlock.append(i + ' '*(largest-len(i)))
+            return newBlock
+
+        def prepad(block2,block1):
+            largest = max([len(filtered(i)) for i in block1])+1
+            newBlock = []
+            for i in block2:
+                newBlock.append(' '*largest + i)
+            return newBlock
+
+        #---------------------------------------------------------------
+        # CONCATENATION [+|-|*]
+        #---------------------------------------------------------------
+        def concat(mainline1, block1, mainline2, block2, op):
+            def concat_prepad(block2,block1):
+                largest = max([len(filtered(i)) for i in block1])
+                newBlock = []
+                for i in block2:
+                    newBlock.append(' '*largest + i)
+                return newBlock
+
+            # we want to concatenate the highest line with the lower line
+            # at the right position
+
+            # TODO HANDLE MAINLINE
+            if mainline2 > mainline1:
+                # right higher than left
+                # calculate number of missing lines
+                missingLines = mainline2-mainline1
+                padding = []
+                for i in range(0,missingLines):
+                    padding.append("")
+                padding = concat_prepad(padding, block1)
+                block1 = padding+block1
+                mainline1 = mainline1+missingLines
+                # now they're equal
+
+            # left higher than or equal to right
+            newBlock = pad(block1)
+            prePadded = False
+            for i in range(0,len(block2)):
+                if i < len(newBlock):
+                    if i == mainline2:
+                        newBlock[i] += op+block2[i]	# TODO
+                    else:
+                        newBlock[i] += ' '+block2[i]	# TODO
+                else:
+                    if not prePadded:
+                        block2 = prepad(block2, block1)
+                        prePadded = True
+                    newBlock.append(block2[i])	# TODO
+
+            newBlock = pad(newBlock)
+            return mainline1,newBlock
+                            
+
+        #---------------------------------------------------------------
+        # DENOMINATION [/]
+        #---------------------------------------------------------------
+        def denom(mainline1, block1, mainline2, block2):
+            # block1 is the numerator
+            # block2 is the denominator
+            # we need to concatenate these functions vertically
+            # in the correct position
+
+            newBlock = pad(pad(block1)+block2)
+
+            newBlock[mainline1] = '%'+newBlock[mainline1]+'/'
+            return mainline1,newBlock
+
+        #---------------------------------------------------------------
+        # EXPONENTIATION [^]
+        #---------------------------------------------------------------
+        def expo(mainline1, block1, mainline2, block2):
+            newBlock1 = block1
+            newBlock1 = pad(newBlock1)
+            newBlock2 = prepad(block2,newBlock1)
+            newBlock1[mainline1] += '^'
+            newBlock = pad(newBlock2+newBlock1)
+
+            return mainline1+len(newBlock2),newBlock
+
+        #---------------------------------------------------------------
+        # PARENTHESES [(]
+        #---------------------------------------------------------------
+        def paren(mainline1, block1):
+            # block1 is the numerator
+            # block2 is the denominator
+            # we need to concatenate these functions vertically
+            # in the correct position
+
+            newBlock = pad(block1)
+            for i in range(0,len(newBlock)):
+                if i == mainline1:
+                    newBlock[i] = '('+newBlock[i]+')'
+                else:
+                    newBlock[i] = ' '+newBlock[i]+' '
+            return mainline1,newBlock
+
+        ################################################################
+        # METHOD EXECUTION
+        ################################################################
+        if self.op.isdigit():
+            return 0,[self.op]
+        elif self.op in ['+','-','*']:
+            # perform concatenation
+            mainline1, block1 = self.arg1.reformat()
+            mainline2, block2 = self.arg2.reformat()
+            return concat(mainline1, block1, mainline2, block2, self.op)
+        elif self.op == '/':
+            mainline1, block1 = self.arg1.reformat()
+            mainline2, block2 = self.arg2.reformat()
+            return denom(mainline1, block1, mainline2, block2)
+        elif self.op == '^':
+            mainline1, block1 = self.arg1.reformat()
+            mainline2, block2 = self.arg2.reformat()
+            return expo(mainline1, block1, mainline2, block2)
+        elif self.op in '(':
+            # we need to attach ()
+            mainline, block = self.arg1.reformat()
+            #block[mainline] = '('+block[mainline]+')'
+            return paren(mainline,block)
+        else:
+            return
+
+def output(expression=''):
+    syntax_tree = node(expression)
+    solution = str(syntax_tree.evaluate())
+    mainline,lst = syntax_tree.reformat()
+    for i in range(0,len(lst)):
+        cur_line = lst[i].replace('%',underline).replace('/',normal)
+        if i == mainline:
+            cur_line += ' = ' + solution
+        print(cur_line)
+    return
+
+def convert(expression=''):
+    try:
+        syntax_tree = node(expression)
+        solution = str(syntax_tree.evaluate())
+        mainline,lst = syntax_tree.reformat()
+        lst[mainline] = lst[mainline] + ' = ' + solution
+        return lst
+    except:
+        return [""]
+
+import curses
+
+def initNcurses():
+    stdscr = curses.initscr()
+
+    curses.noecho()
+    curses.cbreak()
+    stdscr.keypad(True)
+    return stdscr
+
+def exitNcurses(stdscr):
+    curses.nocbreak()
+    stdscr.keypad(False)
+    curses.echo()
+    curses.endwin()
+
+
+stdscr = initNcurses()
+
+
+
+exitNcurses(stdscr)
+
+from curses import wrapper
+
+def main(stdscr):
+    # Clear screen
+    BACKSPACE = 127
+    position = 0
+    line_lst = []
+
+    line = ""
+    while True:
+        stdscr.move(0,position)
+        cur_char = stdscr.getch()
+        
+        ################################################################
+        # INPUT LINE
+        ################################################################
+        if cur_char == BACKSPACE:
+            #line = line[:-1]
+            line_lst.pop(position-1)
+            position += -1
+        elif cur_char == curses.KEY_LEFT:
+            if position > 0:
+                position += -1
+            continue
+        elif cur_char == curses.KEY_RIGHT:
+            if position < len(line_lst):
+                position += 1
+            continue
+        else:
+            #line += chr(cur_char)
+            line_lst.insert(position,chr(cur_char))
+            position += 1
+
+        ################################################################
+        # DRAWING
+        ################################################################
+        stdscr.clear()
+        stdscr.move(0,0)
+        stdscr.addstr("".join(line_lst))
+        stdscr.move(1,0)
+        for cur_line in convert("".join(line_lst)):
+            for cur_char in cur_line:
+                if cur_char == '%':
+                    stdscr.attron(curses.A_UNDERLINE)
+                elif cur_char == '/':
+                    stdscr.attroff(curses.A_UNDERLINE)
+                else:
+                    stdscr.addch(cur_char)
+            stdscr.addch('\n')
+    
+    return
+
+wrapper(main)
