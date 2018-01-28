@@ -345,7 +345,6 @@ def main(stdscr):
     position = 0
     line_lst = []
 
-    line = ""
     while True:
         stdscr.move(0,position)
         cur_char = stdscr.getch()
@@ -353,10 +352,20 @@ def main(stdscr):
         ################################################################
         # INPUT LINE
         ################################################################
+        #---------------------------------------------------------------
+        # DELETION
+        #---------------------------------------------------------------
         if cur_char == BACKSPACE:
-            #line = line[:-1]
-            line_lst.pop(position-1)
-            position += -1
+            if position > 0:
+                line_lst.pop(position-1)
+                position += -1
+        elif cur_char == curses.KEY_DC:
+            if position < len(line_lst):
+                line_lst.pop(position)
+
+        #---------------------------------------------------------------
+        # NAVIGATION
+        #---------------------------------------------------------------
         elif cur_char == curses.KEY_LEFT:
             if position > 0:
                 position += -1
@@ -365,8 +374,16 @@ def main(stdscr):
             if position < len(line_lst):
                 position += 1
             continue
+        elif cur_char == curses.KEY_HOME:
+            position = 0
+            continue
+        elif cur_char == curses.KEY_END:
+            position = len(line_lst)
+            continue
+        #---------------------------------------------------------------
+        # INSERTION
+        #---------------------------------------------------------------
         else:
-            #line += chr(cur_char)
             line_lst.insert(position,chr(cur_char))
             position += 1
 
