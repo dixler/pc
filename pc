@@ -13,7 +13,7 @@ class node:
         self.raw = expression
         self.arg1 = None
         self.arg2 = None
-        if expression.replace('#','').replace('&','').replace('.','').isdigit():
+        if expression.replace('#','').replace('.','').isdigit():
             self.op = expression
         else:
             for i in range(0,len(expression)):
@@ -28,10 +28,23 @@ class node:
                     break
                 
     def paren_split(self, expression=''):
+        # since we like having cursors, we have to handle them
         if expression[0] == '(' \
            and expression[-1] == ')':
             self.op = '('
             self.arg1 = node(expression[1:-1])
+            return True
+        elif expression[0] == '#' \
+           and expression[1] == '(' \
+           and expression[-1] == ')':
+            self.op = '('
+            self.arg1 = node(expression[2:-1])
+            return True
+        elif expression[-1] == '#' \
+           and expression[0] == '(' \
+           and expression[-2] == ')':
+            self.op = '('
+            self.arg1 = node(expression[0:-2])
             return True
             
         return False
@@ -149,7 +162,7 @@ class node:
             return True
 
     def evaluate(self):
-        return eval(self.raw.replace("^","**").replace("#",'').replace('&',''))
+        return eval(self.raw.replace("^","**").replace("#",''))
 
     # 2D edition(testing with ^)
     def reformat(self):
@@ -160,9 +173,9 @@ class node:
         #---------------------------------------------------------------
         # PADDING auxilliary function
         #---------------------------------------------------------------
-        formatters = ['%','/','#','&']
+        formatters = ['%','/','#']
         def filtered(line=''):
-            return line.replace('%','').replace('/','').replace('#','').replace('&','')
+            return line.replace('%','').replace('/','').replace('#','')
 
         def pad(block1):
             largest = max([len(filtered(i)) for i in block1])
@@ -306,15 +319,14 @@ def output(expression=''):
 
 def convert(expression='',pos=0):
     try:
-        expression = expression[:pos-1]+'#'+expression[pos-1:pos]+'&'+expression[pos:]
-        #expression = expression[:pos]+'99'+expression[pos:pos+1]+'99'+expression[pos+1:]
+        expression = expression[:pos-1]+'#'+expression[pos-1:]
         syntax_tree = node(expression)
         solution = str(syntax_tree.evaluate())
         mainline,lst = syntax_tree.reformat()
         lst[mainline] = lst[mainline] + ' = ' + solution
         return lst
-    except:
-        return [""]
+    except Exception as e:
+        return [str(e)]
 
 import curses
 
@@ -393,6 +405,7 @@ def main(stdscr):
         stdscr.move(0,0)
         stdscr.addstr("".join(line_lst))
         stdscr.move(int(len("".join(line_lst))/width)+1,0)
+        atCursor = False
         for cur_line in convert("".join(line_lst),position):
             for cur_char in cur_line:
                 if cur_char == '%':
@@ -401,12 +414,16 @@ def main(stdscr):
                     stdscr.attroff(curses.A_UNDERLINE)
                 elif cur_char == '#':
                     stdscr.attron(curses.A_BOLD)
-                elif cur_char == '&':
-                    stdscr.attroff(curses.A_BOLD)
+                    atCursor = True
                 else:
                     stdscr.addch(cur_char)
+                    if atCursor:
+                        stdscr.attroff(curses.A_BOLD)
+                        atCursor = False
             stdscr.addch('\n')
     
     return
 
 wrapper(main)
+#output("1+1+(2.1*1)")
+#output("1+1+(2*1)")
