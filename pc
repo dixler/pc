@@ -11,8 +11,7 @@ normal = '~'
 class node:
     def __init__(self, expression=''):
         self.raw = expression
-        self.arg1 = None
-        self.arg2 = None
+        self.arg1 = self.arg2 = None
         if expression.replace('#','').replace('.','').isdigit():
             self.op = expression
         else:
@@ -33,26 +32,24 @@ class node:
            and expression[-1] == ')':
             self.op = '('
             self.arg1 = node(expression[1:-1])
-            return True
         elif expression[0] == '#' \
            and expression[1] == '(' \
            and expression[-1] == ')':
             self.op = '('
             self.arg1 = node(expression[2:-1])
-            return True
         elif expression[-1] == '#' \
            and expression[0] == '(' \
            and expression[-2] == ')':
             self.op = '('
             self.arg1 = node(expression[0:-2])
-            return True
+        else:
+            return False
+        return True
             
-        return False
 
     def expo_split(self, expression=''):
         level = 0
-        arg1 = ''
-        arg2 = ''
+        arg1 = arg2 =''
         parseFirst = True
         for i in expression:
             # level determination
@@ -79,8 +76,7 @@ class node:
 
     def multi_split(self, expression=''):
         level = 0
-        arg1 = ''
-        arg2 = ''
+        arg1 = arg2 =''
         parseFirst = True
         for i in expression:
             # level determination
@@ -107,8 +103,7 @@ class node:
 
     def div_split(self, expression=''):
         level = 0
-        arg1 = ''
-        arg2 = ''
+        arg1 = arg2 = ''
         parseFirst = True
         for i in expression:
             # level determination
@@ -135,8 +130,7 @@ class node:
 
     def term_split(self, expression=''):
         level = 0
-        arg1 = ''
-        arg2 = ''
+        arg1 = arg2 = ''
         parseFirst = True
         for i in expression:
             # level determination
@@ -157,6 +151,7 @@ class node:
                 arg2 += i
         if parseFirst == False:
             # indicates that an addition was found
+            print('parsed',arg1,arg2)
             self.arg1 = node(arg1)
             self.arg2 = node(arg2)
             return True
@@ -175,6 +170,7 @@ class node:
         #---------------------------------------------------------------
         formatters = ['%','/','#']
         def filtered(line=''):
+            return ''.join([c if c not in formatters else '' for c in line])
             return line.replace('%','').replace('/','').replace('#','')
 
         def pad(block1):
@@ -215,10 +211,21 @@ class node:
                     padding.append("")
                 padding = concat_prepad(padding, block1)
                 block1 = padding+block1
-                mainline1 = mainline1+missingLines
+                mainline1 = mainline2
+                # now they're equal
+            elif mainline1 > mainline2:
+                # left higher than right
+                # calculate number of missing lines
+                missingLines = mainline1-mainline2
+                padding = []
+                for i in range(0,missingLines):
+                    padding.append("")
+                padding = concat_prepad(padding, block2)
+                block2 = padding+block2
+                mainline2 = mainline1
                 # now they're equal
 
-            # left higher than or equal to right
+            # left equal to right
             newBlock = pad(block1)
             prePadded = False
             for i in range(0,len(block2)):
@@ -228,10 +235,9 @@ class node:
                     else:
                         newBlock[i] += ' '+block2[i]	# TODO
                 else:
-                    if not prePadded:
-                        block2 = prepad(block2, block1)
-                        prePadded = True
-                    newBlock.append(block2[i])	# TODO
+                    block2 = prepad(block2, block1)
+                    newBlock += block2[i:]	# TODO
+                    break
 
             newBlock = pad(newBlock)
             return mainline1,newBlock
@@ -267,11 +273,6 @@ class node:
         # PARENTHESES [(]
         #---------------------------------------------------------------
         def paren(mainline1, block1):
-            # block1 is the numerator
-            # block2 is the denominator
-            # we need to concatenate these functions vertically
-            # in the correct position
-
             newBlock = pad(block1)
             for i in range(0,len(newBlock)):
                 if i == mainline1:
@@ -301,7 +302,6 @@ class node:
         elif self.op in '(':
             # we need to attach ()
             mainline, block = self.arg1.reformat()
-            #block[mainline] = '('+block[mainline]+')'
             return paren(mainline,block)
         else:
             return 0,[self.op]
@@ -330,28 +330,6 @@ def convert(expression='',pos=0):
         return [str(e)]
 
 import curses
-
-def initNcurses():
-    stdscr = curses.initscr()
-
-    curses.noecho()
-    curses.cbreak()
-    stdscr.keypad(True)
-    return stdscr
-
-def exitNcurses(stdscr):
-    curses.nocbreak()
-    stdscr.keypad(False)
-    curses.echo()
-    curses.endwin()
-
-
-stdscr = initNcurses()
-
-
-
-exitNcurses(stdscr)
-
 from curses import wrapper
 
 def main(stdscr):
@@ -388,9 +366,7 @@ def main(stdscr):
         elif cur_char == curses.KEY_RIGHT:
             if position < len(line_lst):
                 position += 1
-        elif cur_char == curses.KEY_UP:
-            continue
-        elif cur_char == curses.KEY_DOWN:
+        elif cur_char in [curses.KEY_UP,curses.KEY_DOWN]:
             continue
         elif cur_char == curses.KEY_HOME:
             position = 0
