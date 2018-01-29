@@ -4,9 +4,8 @@ Author: Kyle Dixler
 Finally discovered compiler design and the idea of abstract syntax trees
 let's see where this goes.
 '''
-
-underline = '`'
-normal = '~'
+underline = "\033[4m"
+normal = "\033[0m"
 
 class node:
     def __init__(self, expression=''):
@@ -180,6 +179,18 @@ class node:
                 newBlock.append(i + ' '*(largest-len(i)))
             return newBlock
 
+        # if block1 larger than block2 return block1
+        def padTo(block1,block2):
+            largest1 = max([len(filtered(i)) for i in block1])
+            largest = max([len(filtered(i)) for i in block2])
+            if largest1 > largest:
+                return block1
+
+            newBlock = []
+            for i in block1:
+                newBlock.append(i+' '*(largest-len(filtered(i))))
+            return newBlock
+
         def prepad(block2,block1):
             largest = max([len(filtered(i)) for i in block1])+1
             newBlock = []
@@ -252,9 +263,11 @@ class node:
             # we need to concatenate these functions vertically
             # in the correct position
 
-            newBlock1 = block1
+            newBlock1 = padTo(block1,block2)
+            newBlock2 = padTo(block2,block1)
+
             newBlock1[-1] = '%'+newBlock1[-1]+'/'
-            newBlock = pad(pad(newBlock1)+block2)
+            newBlock = newBlock1+newBlock2
             return mainline1,newBlock
 
         #---------------------------------------------------------------
@@ -406,3 +419,4 @@ def main(stdscr):
     return
 
 wrapper(main)
+#output("1/(2+1)")
