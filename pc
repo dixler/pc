@@ -252,9 +252,9 @@ class node:
             # we need to concatenate these functions vertically
             # in the correct position
 
-            newBlock = pad(pad(block1)+block2)
-
-            newBlock[mainline1] = '%'+newBlock[mainline1]+'/'
+            newBlock1 = block1
+            newBlock1[-1] = '%'+newBlock1[-1]+'/'
+            newBlock = pad(pad(newBlock1)+block2)
             return mainline1,newBlock
 
         #---------------------------------------------------------------
