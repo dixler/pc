@@ -1,4 +1,4 @@
-<img src="https://raw.githubusercontent.com/dixler/pc/master/preview.png" /> 
+<img src="https://raw.githubusercontent.com/dixler/pc/master/preview.gif" /> 
 
 PC(python calculator)
 
