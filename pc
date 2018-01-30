@@ -150,7 +150,6 @@ class node:
                 arg2 += i
         if parseFirst == False:
             # indicates that an addition was found
-            print('parsed',arg1,arg2)
             self.arg1 = node(arg1)
             self.arg2 = node(arg2)
             return True
@@ -212,7 +211,6 @@ class node:
             # we want to concatenate the highest line with the lower line
             # at the right position
 
-            # TODO HANDLE MAINLINE
             if mainline2 > mainline1:
                 # right higher than left
                 # calculate number of missing lines
@@ -263,36 +261,39 @@ class node:
             # we need to concatenate these functions vertically
             # in the correct position
 
-            newBlock1 = padTo(block1,block2)
-            newBlock2 = padTo(block2,block1)
+            # we must pad them flush to each other
+            block1 = padTo(block1,block2)
+            block2 = padTo(block2,block1)
 
-            newBlock1[-1] = '%'+newBlock1[-1]+'/'
-            newBlock = newBlock1+newBlock2
-            return mainline1,newBlock
+            # pad the bottom line of the numerator
+            block1[-1] = '%'+block1[-1]+'/'
+
+            # concatenate the lists
+            block = block1+block2
+            return mainline1,block
 
         #---------------------------------------------------------------
         # EXPONENTIATION [^]
         #---------------------------------------------------------------
         def expo(mainline1, block1, mainline2, block2):
-            newBlock1 = block1
-            newBlock1 = pad(newBlock1)
-            newBlock2 = prepad(block2,newBlock1)
-            newBlock1[mainline1] += '^'
-            newBlock = pad(newBlock2+newBlock1)
+            block1 = pad(block1)
+            block2 = prepad(block2,block1)
+            block1[mainline1] += '^'
+            block = pad(block2+block1)
 
-            return mainline1+len(newBlock2),newBlock
+            return mainline1+len(block2),block
 
         #---------------------------------------------------------------
         # PARENTHESES [(]
         #---------------------------------------------------------------
         def paren(mainline1, block1):
-            newBlock = pad(block1)
-            for i in range(0,len(newBlock)):
+            block1 = pad(block1)
+            for i in range(0,len(block1)):
                 if i == mainline1:
-                    newBlock[i] = '('+newBlock[i]+')'
+                    block1[i] = '('+block1[i]+')'
                 else:
-                    newBlock[i] = ' '+newBlock[i]+' '
-            return mainline1,newBlock
+                    block1[i] = ' '+block1[i]+' '
+            return mainline1,block1
 
         ################################################################
         # METHOD EXECUTION
@@ -313,22 +314,10 @@ class node:
             mainline2, block2 = self.arg2.reformat()
             return expo(mainline1, block1, mainline2, block2)
         elif self.op in '(':
-            # we need to attach ()
             mainline, block = self.arg1.reformat()
             return paren(mainline,block)
         else:
             return 0,[self.op]
-
-def output(expression=''):
-    syntax_tree = node(expression)
-    solution = str(syntax_tree.evaluate())
-    mainline,lst = syntax_tree.reformat()
-    for i in range(0,len(lst)):
-        cur_line = lst[i].replace('%',underline).replace('/',normal)
-        if i == mainline:
-            cur_line += ' = ' + solution
-        print(cur_line)
-    return
 
 def convert(expression='',pos=0):
     try:
@@ -419,4 +408,18 @@ def main(stdscr):
     return
 
 wrapper(main)
-#output("1/(2+1)")
+
+from decimal import Decimal
+def output(expression=''):
+    syntax_tree = node(expression)
+
+    solution = str(syntax_tree.evaluate())
+    solution = '%.2E' % Decimal(solution)
+    mainline,lst = syntax_tree.reformat()
+    print()
+    for i in range(0,len(lst)):
+        cur_line = lst[i].replace('%',underline).replace('/',normal)
+        if i == mainline:
+            cur_line += ' = ' + solution
+        print(cur_line)
+    return
