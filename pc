@@ -149,36 +149,34 @@ class Node:
 
             # we want to concatenate both blocks at the mainline
 
-            def concat_align(mainline1, block1, mainline2, block2):
+            def concat_align(mainline1, block1, mainline2):
                 """ align block1 to block2 by vertical padding"""
                 if mainline2 > mainline1:
                     # right higher than left
                     # calculate number of missing lines
                     # then pad left
                     missing_lines = mainline2-mainline1
-                    padding = []
-                    for i in range(0, missing_lines):
-                        padding.append("")
+                    padding = ['']*missing_lines
                     padding = concat_prepad(padding, block1)
                     block1 = padding+block1
                     mainline1 = mainline2
                     # now they're equal
                 return mainline1, block1
 
-            mainline1, block1 = concat_align(mainline1, block1, mainline2, block2)
-            mainline2, block2 = concat_align(mainline2, block2, mainline1, block1)
+            mainline1, block1 = concat_align(mainline1, block1, mainline2)
+            mainline2, block2 = concat_align(mainline2, block2, mainline1)
 
             # left equal to right
             new_block = pad(block1)
-            for i in range(0, len(block2)):
-                if i < len(new_block):
-                    if i == mainline2:
-                        new_block[i] += operator+block2[i]
+            for count, value in enumerate(block2):
+                if count < len(new_block):
+                    if count == mainline2:
+                        new_block[count] += operator+value
                     else:
-                        new_block[i] += ' '+block2[i]
+                        new_block[count] += ' '+value
                 else:
                     block2 = prepad(block2, block1)
-                    new_block += block2[i:]
+                    new_block += block2[count:]
                     break
 
             new_block = pad(new_block)
@@ -188,7 +186,7 @@ class Node:
         #---------------------------------------------------------------
         # DENOMINATION [/]
         #---------------------------------------------------------------
-        def denom(mainline1, block1, mainline2, block2):
+        def denom(mainline1, block1, block2):
             """
             block1 is the numerator
             block2 is the denominator
@@ -210,7 +208,7 @@ class Node:
         #---------------------------------------------------------------
         # EXPONENTIATION [^]
         #---------------------------------------------------------------
-        def expo(mainline1, block1, mainline2, block2):
+        def expo(mainline1, block1, block2):
             """ we need to pad the blocks and then combine them """
             block1 = pad(block1)
             block2 = prepad(block2, block1)
@@ -223,12 +221,13 @@ class Node:
         # PARENTHESES [(]
         #---------------------------------------------------------------
         def paren(mainline1, block1):
+            """ handle reinserting parentheses"""
             block1 = pad(block1)
-            for i in range(0, len(block1)):
+            for i, line in enumerate(block):# range(0, len(block1)):
                 if i == mainline1:
-                    block1[i] = '('+block1[i]+')'
+                    block1[i] = '('+line+')'
                 else:
-                    block1[i] = ' '+block1[i]+' '
+                    block1[i] = ' '+line+' '
             return mainline1, block1
 
         ################################################################
@@ -243,12 +242,12 @@ class Node:
             # perform vertical concatenation
             mainline1, block1 = self.arg1.reformat()
             mainline2, block2 = self.arg2.reformat()
-            return denom(mainline1, block1, mainline2, block2)
+            return denom(mainline1, block1, block2)
         elif self.operation == '^':
             # perform diagonal concatenation
             mainline1, block1 = self.arg1.reformat()
             mainline2, block2 = self.arg2.reformat()
-            return expo(mainline1, block1, mainline2, block2)
+            return expo(mainline1, block1, block2)
         elif self.operation in '(':
             # inject ()
             mainline, block = self.arg1.reformat()
@@ -265,8 +264,8 @@ def convert(expression='', pos=0):
         mainline, lst = syntax_tree.reformat()
         lst[mainline] = lst[mainline] + ' = ' + solution
         return lst
-    except Exception as output:
-        return [str(output)]
+    except Exception as desc:
+        return [str(desc)]
 
 def main(stdscr):
     """ todo """
@@ -325,7 +324,7 @@ def main(stdscr):
                 position += 1
                 line_lst.insert(position, ')')
                 position += -1
-            elif chr(cur_char) == ')' and line_lst[position] == ')':
+            elif chr(cur_char) == ')' and position < len(line_lst) and line_lst[position] == ')':
                 # todo
                 pass
             else:
@@ -340,7 +339,7 @@ def main(stdscr):
         stdscr.addstr("".join(line_lst))
         stdscr.move(int(len("".join(line_lst))/width)+1, 0)
         at_cursor = False
-        for cur_line in convert("".join(line_lst), position):
+        for i, cur_line in enumerate(convert("".join(line_lst), position)):
             for cur_char in cur_line:
                 if cur_char == '%':
                     stdscr.attron(curses.A_UNDERLINE)
@@ -354,7 +353,12 @@ def main(stdscr):
                     if at_cursor:
                         stdscr.attroff(curses.A_BOLD)
                         at_cursor = False
-            stdscr.addch('\n')
+            if i > height-4:
+                stdscr.addch('\n')
+                stdscr.addstr('...')
+                break
+            else:
+                stdscr.addch('\n')
     return
 
 wrapper(main)
@@ -366,8 +370,8 @@ def output(expression=''):
     solution = str(syntax_tree.evaluate())
     mainline, lst = syntax_tree.reformat()
     print()
-    for i in range(0, len(lst)):
-        cur_line = lst[i].replace('%', UNDERLINE).replace('/', NORMAL)
+    for i, line in enumerate(lst):
+        cur_line = line.replace('%', UNDERLINE).replace('/', NORMAL)
         if i == mainline:
             cur_line += ' = ' + solution
         print(cur_line)
