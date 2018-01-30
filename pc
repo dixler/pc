@@ -15,14 +15,15 @@ class node:
             self.op = expression
         else:
             for i in range(0,len(expression)):
-                if \
-                self.term_split(expression) \
-                or self.multi_split(expression) \
-                or self.div_split(expression) \
-                or self.expo_split(expression) \
+                if self.tok_split(expression, '+') \
+                or self.tok_split(expression, '-') \
+                or self.tok_split(expression, '*') \
+                or self.tok_split(expression, '/') \
+                or self.tok_split(expression, '^') \
                 or self.paren_split(expression):
                     # use shortcircuit evaluation to
                     # enforce precedence rules
+                    # if we're here, there's nothing to parse
                     break
                 
     def paren_split(self, expression=''):
@@ -45,62 +46,7 @@ class node:
             return False
         return True
             
-
-    def expo_split(self, expression=''):
-        level = 0
-        arg1 = arg2 =''
-        parseFirst = True
-        for i in expression:
-            # level determination
-            if i == '(':
-                level += 1
-            elif i == ')':
-                level -= 1
-            # if 0-level operate
-            if level == 0 and parseFirst:
-                if i == '^':
-                    # we need to split the term
-                    self.op = i
-                    parseFirst = False
-                    continue
-            if parseFirst:
-                arg1 += i
-            else:
-                arg2 += i
-        if parseFirst == False:
-            # indicates that an addition was found
-            self.arg1 = node(arg1)
-            self.arg2 = node(arg2)
-            return True
-
-    def multi_split(self, expression=''):
-        level = 0
-        arg1 = arg2 =''
-        parseFirst = True
-        for i in expression:
-            # level determination
-            if i == '(':
-                level += 1
-            elif i == ')':
-                level -= 1
-            # if 0-level operate
-            if level == 0 and parseFirst:
-                if i == '*':
-                    # we need to split the term
-                    self.op = i
-                    parseFirst = False
-                    continue
-            if parseFirst:
-                arg1 += i
-            else:
-                arg2 += i
-        if parseFirst == False:
-            # indicates that an addition was found
-            self.arg1 = node(arg1)
-            self.arg2 = node(arg2)
-            return True
-
-    def div_split(self, expression=''):
+    def tok_split(self, expression='', token=''):
         level = 0
         arg1 = arg2 = ''
         parseFirst = True
@@ -112,34 +58,7 @@ class node:
                 level -= 1
             # if 0-level operate
             if level == 0 and parseFirst:
-                if i == '/':
-                    # we need to split the term
-                    self.op = i
-                    parseFirst = False
-                    continue
-            if parseFirst:
-                arg1 += i
-            else:
-                arg2 += i
-        if parseFirst == False:
-            # indicates that an addition was found
-            self.arg1 = node(arg1)
-            self.arg2 = node(arg2)
-            return True
-
-    def term_split(self, expression=''):
-        level = 0
-        arg1 = arg2 = ''
-        parseFirst = True
-        for i in expression:
-            # level determination
-            if i == '(':
-                level += 1
-            elif i == ')':
-                level -= 1
-            # if 0-level operate
-            if level == 0 and parseFirst:
-                if i == '+' or i == '-':
+                if i == token:
                     # we need to split the term
                     self.op = i
                     parseFirst = False
@@ -353,6 +272,11 @@ def main(stdscr):
         #---------------------------------------------------------------
         if cur_char == BACKSPACE:
             if position > 0:
+                # legal deletion
+                if line_lst[position-1] == '(':
+                    if position < len(line_lst) and line_lst[position] == ')':
+                        line_lst.pop(position)
+
                 line_lst.pop(position-1)
                 position += -1
         elif cur_char == curses.KEY_DC:
@@ -378,7 +302,17 @@ def main(stdscr):
         # INSERTION
         #---------------------------------------------------------------
         else:
-            line_lst.insert(position,chr(cur_char))
+            # paren matching
+            if chr(cur_char) == '(':
+                # we add both
+                line_lst.insert(position,'(')
+                position += 1
+                line_lst.insert(position,')')
+                position += -1
+            elif chr(cur_char) == ')' and line_lst[position-1] == ')':
+                pass
+            else:
+                line_lst.insert(position,chr(cur_char))
             position += 1
 
         ################################################################
@@ -414,12 +348,13 @@ def output(expression=''):
     syntax_tree = node(expression)
 
     solution = str(syntax_tree.evaluate())
-    solution = '%.2E' % Decimal(solution)
+    #solution = '%.2E' % Decimal(solution)
     mainline,lst = syntax_tree.reformat()
     print()
     for i in range(0,len(lst)):
         cur_line = lst[i].replace('%',underline).replace('/',normal)
         if i == mainline:
-            cur_line += ' = ' + solution
+            cur_line += ' = ' + solution + '==' + str(syntax_tree.treeEval())
         print(cur_line)
     return
+
