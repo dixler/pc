@@ -182,7 +182,6 @@ class Node:
             new_block = pad(new_block)
             return mainline1, new_block
 
-
         #---------------------------------------------------------------
         # DENOMINATION [/]
         #---------------------------------------------------------------
@@ -285,7 +284,7 @@ def main(stdscr):
         #---------------------------------------------------------------
         # DELETION
         #---------------------------------------------------------------
-        if cur_char == backspace:
+        if cur_char == curses.KEY_BACKSPACE:
             if position > 0:
                 # legal deletion
                 if line_lst[position-1] == '(':
