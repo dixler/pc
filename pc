@@ -136,7 +136,7 @@ class Node:
             largest = max([len(filtered(i)) for i in block1])
             new_block = []
             for i in block1:
-                new_block.append(i + ' '*(largest-len(i)))
+                new_block.append(i + ' '*(largest-len(filtered(i))))
             return new_block
 
         def pad_to(block1, block2):
