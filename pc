@@ -1,8 +1,10 @@
 #!/bin/python3.6
 '''
 Author: Kyle Dixler
-Finally discovered compiler design and the idea of abstract syntax trees
-let's see where this goes.
+need to add an implicit precedence for 
+1/2/3/4/5
+possibly translate using an implied parens that is a helper method
+1/2/3/4/5 -> (((1/2)/3)/4)/5
 '''
 underline = "\033[4m"
 normal = "\033[0m"
@@ -14,17 +16,16 @@ class node:
         if expression.replace('#','').replace('.','').isdigit():
             self.op = expression
         else:
-            for i in range(0,len(expression)):
-                if self.tok_split(expression, '+') \
-                or self.tok_split(expression, '-') \
-                or self.tok_split(expression, '*') \
-                or self.tok_split(expression, '/') \
-                or self.tok_split(expression, '^') \
-                or self.paren_split(expression):
-                    # use shortcircuit evaluation to
-                    # enforce precedence rules
-                    # if we're here, there's nothing to parse
-                    break
+            if self.tok_split(expression, '+') \
+            or self.tok_split(expression, '-') \
+            or self.div_split(expression, '/') \
+            or self.tok_split(expression, '*') \
+            or self.tok_split(expression, '^') \
+            or self.paren_split(expression):
+            # use shortcircuit evaluation to
+            # enforce precedence rules
+            # if we're here, there's nothing to parse
+                pass
                 
     def paren_split(self, expression=''):
         # since we like having cursors, we have to handle them
@@ -45,11 +46,39 @@ class node:
         else:
             return False
         return True
+
+    def div_split(self, expression='', token=''):
+        " forced reverse parsing to deal with inverted operation"
+        level = 0
+        arg1 = arg2 = ''
+        onDenomArg = True
+        for i in expression[::-1]:
+            # level determination
+            if i == '(':
+                level += 1
+            elif i == ')':
+                level -= 1
+            # if 0-level operate
+            if level == 0 and onDenomArg:
+                if i == token:
+                    # we need to split the term
+                    self.op = i
+                    onDenomArg = False
+                    continue
+            if onDenomArg:
+                arg2 = i+arg2
+            else:
+                arg1 = i+arg1
+        if onDenomArg == False:
+            # indicates that an operator was found
+            self.arg1 = node(arg1)
+            self.arg2 = node(arg2)
+            return True
             
     def tok_split(self, expression='', token=''):
         level = 0
         arg1 = arg2 = ''
-        parseFirst = True
+        onFirstArg = True
         for i in expression:
             # level determination
             if i == '(':
@@ -57,18 +86,18 @@ class node:
             elif i == ')':
                 level -= 1
             # if 0-level operate
-            if level == 0 and parseFirst:
+            if level == 0 and onFirstArg:
                 if i == token:
                     # we need to split the term
                     self.op = i
-                    parseFirst = False
+                    onFirstArg = False
                     continue
-            if parseFirst:
+            if onFirstArg:
                 arg1 += i
             else:
                 arg2 += i
-        if parseFirst == False:
-            # indicates that an addition was found
+        if onFirstArg == False:
+            # indicates that an operator was found
             self.arg1 = node(arg1)
             self.arg2 = node(arg2)
             return True
@@ -343,7 +372,7 @@ def main(stdscr):
 
 wrapper(main)
 
-from decimal import Decimal
+#from decimal import Decimal
 def output(expression=''):
     syntax_tree = node(expression)
 
@@ -354,7 +383,9 @@ def output(expression=''):
     for i in range(0,len(lst)):
         cur_line = lst[i].replace('%',underline).replace('/',normal)
         if i == mainline:
-            cur_line += ' = ' + solution + '==' + str(syntax_tree.treeEval())
+            cur_line += ' = ' + solution
         print(cur_line)
     return
 
+#output('(1+1*2^4)*111111/2/2/2+1^3/2+1+1+1')
+#output('(((1/2)/2)/2)')
