@@ -338,7 +338,7 @@ def main(stdscr):
                 position += 1
                 line_lst.insert(position,')')
                 position += -1
-            elif chr(cur_char) == ')' and line_lst[position-1] == ')':
+            elif chr(cur_char) == ')' and position < len(line_lst) and line_lst[position] == ')':
                 pass
             else:
                 line_lst.insert(position,chr(cur_char))
