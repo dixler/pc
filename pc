@@ -269,7 +269,6 @@ def convert(expression='', pos=0):
 def main(stdscr):
     """ todo """
     # Clear screen
-    backspace = 127
     position = 0
     line_lst = []
 
@@ -284,7 +283,7 @@ def main(stdscr):
         #---------------------------------------------------------------
         # DELETION
         #---------------------------------------------------------------
-        if cur_char == curses.KEY_BACKSPACE:
+        if cur_char in [curses.KEY_BACKSPACE,127]:
             if position > 0:
                 # legal deletion
                 if line_lst[position-1] == '(':
