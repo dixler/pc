@@ -1,8 +1,6 @@
 #!/bin/python3.6
 '''
 Author: Kyle Dixler
-Finally discovered compiler design and the idea of abstract syntax trees
-let's see where this goes.
 '''
 
 import curses
@@ -25,7 +23,7 @@ class Node:
                 pass
             elif self.tok_split(expression, '*'):
                 pass
-            elif self.tok_split(expression, '/'):
+            elif self.div_split(expression, '/'):
                 pass
             elif self.tok_split(expression, '^'):
                 pass
@@ -55,6 +53,35 @@ class Node:
         else:
             return False
         return True
+
+    def div_split(self, expression='', token=''):
+        " forced reverse parsing to deal with inverted operation"
+        level = 0
+        arg1 = arg2 = ''
+        on_denom_arg = True
+        for i in expression[::-1]:
+            # level determination
+            if i == '(':
+                level += 1
+            elif i == ')':
+                level -= 1
+            # if 0-level operate
+            if level == 0 and on_denom_arg:
+                if i == token:
+                    # we need to split the term
+                    self.operation = i
+                    on_denom_arg = False
+                    continue
+            if on_denom_arg:
+                arg2 = i+arg2
+            else:
+                arg1 = i+arg1
+        if not on_denom_arg:
+            # indicates that an operator was found
+            self.arg1 = Node(arg1)
+            self.arg2 = Node(arg2)
+            return True
+        return False
 
     def tok_split(self, expression='', token=''):
         """ todo """
@@ -283,7 +310,7 @@ def main(stdscr):
         #---------------------------------------------------------------
         # DELETION
         #---------------------------------------------------------------
-        if cur_char in [curses.KEY_BACKSPACE,127]:
+        if cur_char in [curses.KEY_BACKSPACE, 127]:
             if position > 0:
                 # legal deletion
                 if line_lst[position-1] == '(':
@@ -323,7 +350,6 @@ def main(stdscr):
                 line_lst.insert(position, ')')
                 position += -1
             elif chr(cur_char) == ')' and position < len(line_lst) and line_lst[position] == ')':
-                # todo
                 pass
             else:
                 line_lst.insert(position, chr(cur_char))
@@ -361,6 +387,7 @@ def main(stdscr):
 
 wrapper(main)
 
+#from decimal import Decimal
 def output(expression=''):
     """ todo """
     syntax_tree = Node(expression)
@@ -374,3 +401,6 @@ def output(expression=''):
             cur_line += ' = ' + solution
         print(cur_line)
     return
+
+#output('(1+1*2^4)*111111/2/2/2+1^3/2+1+1+1')
+#output('(((1/2)/2)/2)')
